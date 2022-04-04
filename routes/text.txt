@@ -1,0 +1,61 @@
+const express = require("express");
+const connectDB = require("./db");
+const dotenv = require("dotenv");
+const multer = require("multer");
+const path = require("path");
+const app = express();
+const PORT = process.env.PORT || 5000;
+connectDB();
+
+dotenv.config();
+
+app.use(express.json());
+
+app.use("/api/auth", require("./routes/signup"));
+app.use("/api/auth", require("./routes/post"));
+app.use("/api/auth", require("./routes/follow"));
+app.use("/api/auth", require("./routes/updateuser"));
+app.use("/api/auth", require("./routes/comment"));
+app.use("/api/auth", require("./routes/forgot"));
+
+const fileStorageEngien = multer.diskStorage({
+  destination: (req, file, cb) => {
+    cb(null, "./images");
+  },
+  filename: (res, file, cb) => {
+    cb(null, Date.now() + "--" + file.originalname);
+  },
+});
+const upload = multer({
+  storage: fileStorageEngien,
+});
+
+app.use("/images", express.static("images"));
+app.post("/api/auth/upload", upload.single("image"), (req, res) => {
+  console.log(req.file);
+  res.json({
+    sucess: 1,
+    profile_url: `http://localhost:5000/images/${req.file.filename}`,
+  });
+});
+
+
+
+
+
+if (process.env.NODE_ENV === "production") {
+  const path = require("path");
+  app.use(express.static(path.join(__dirname, "/client/build")));
+
+  app.get("*", (req, res) =>
+    res.sendFile(path.resolve(__dirname, "client", "build", "index.html"))
+  );
+} else {
+  app.get("/", (req, res) => {
+    res.send("API is running..");
+  });
+}
+
+app.listen(PORT, () => {
+  console.log("app running on", PORT);
+});
